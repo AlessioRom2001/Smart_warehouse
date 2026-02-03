@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+
+  my-mosquitto-broker:
+    container_name: my-mosquitto-broker
+    image: eclipse-mosquitto:2.0.12
+    ports:
+      - "1883:1883"
+    volumes:
+      - ${PWD}/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ${PWD}/data:/mosquitto/data
+      - ${PWD}/log:/mosquitto/log
+    restart: always
+    networks:
+      - iot_network
+
+  http-inventory-api:
+    container_name: http-inventory-api
+    image: http_iot_inventory_api:0.1
+    ports:
+      - "7070:7070"
+    volumes:
+      - ${PWD}/target_api_conf.yaml:/app/conf.yaml
+    restart: always
+    networks:
+      - iot_network
+
+  web-ui:
+    container_name: web-ui
+    image: web-ui:0.1
+    ports:
+      - "7071:7071"
+    volumes:
+      - ${PWD}/target_web_conf.yaml:/app/web_conf.yaml
+    restart: always
+    depends_on:
+      - http-inventory-api
+    networks:
+      - iot_network
+
+
+
+  pallet_spawner:
+    container_name: pallet_spawner
+    image: pallet_spawner:0.1
+    working_dir: /app
+    command: python -u pallet_spawner.py
+    volumes:
+      - ../pallet_spawner/app:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - my-mosquitto-broker
+    networks:
+      - iot_network
+
+  order_generator:
+    container_name: order_generator
+    image: order_generator:0.1
+    working_dir: /app
+    command: python -u orders.py
+    volumes:
+      - ../order_generator/app:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - my-mosquitto-broker
+    networks:
+      - iot_network
+
+  slots_publisher:
+    container_name: slots_publisher
+    image: slots_publisher:0.1
+    working_dir: /app
+    command: python -u slots.py
+    volumes:
+      - ../slots_publisher/app:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - my-mosquitto-broker
+    networks:
+      - iot_network
+
+  agv_simulator:
+    container_name: agv_simulator
+    image: agv_simulator:0.1
+    working_dir: /app
+    command: python -u agv_simulation.py
+    volumes:
+      - ../agv_simulator/app:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - my-mosquitto-broker
+    networks:
+      - iot_network
+
+networks:
+  iot_network:
+    driver: bridge

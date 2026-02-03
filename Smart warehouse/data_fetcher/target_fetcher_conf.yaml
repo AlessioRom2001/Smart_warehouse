@@ -1,0 +1,6 @@
+broker_ip: "my-mqtt-broker"
+broker_port: 1883
+target_param_topic: "warehouse/config/param/#"
+target_agv_topic: "warehouse/agv/#"
+target_slots_topic: "warehouse/slots/#"
+device_api_url: "http://http-inventory-api:7070/api/v1/iot/inventory/warehouse/config/parameters"

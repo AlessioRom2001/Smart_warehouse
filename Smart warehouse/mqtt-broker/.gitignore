@@ -1,0 +1,5 @@
+# Ignore mosquitto data and log files
+mosquitto/data/*
+!mosquitto/data/.gitkeep
+mosquitto/log/*
+!mosquitto/log/.gitkeep

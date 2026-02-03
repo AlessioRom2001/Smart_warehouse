@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Slot Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            border-collapse: collapse;
+            width: 65%;
+            margin: 30px auto;
+        }
+        th, td {
+            border: 1px solid #aaa;
+            padding: 8px 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        caption {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <table>
+        <caption>Slot Status</caption>
+        <thead>
+            <tr>
+                <th>Slot ID</th>
+                <th>Row</th>
+                <th>Col</th>
+                <th>Level</th>
+                <th>In Use</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for slot in slots %}
+            <tr>
+                <td>{{ slot.slot_id }}</td>
+                <td>{{ slot.row if slot.row is defined else '-' }}</td>
+                <td>{{ slot.col if slot.col is defined else '-' }}</td>
+                <td>{{ slot.level }}</td>
+                <td>{{ slot.in_use }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5">No slot data available</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

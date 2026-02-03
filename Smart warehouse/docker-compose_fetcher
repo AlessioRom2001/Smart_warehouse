@@ -1,0 +1,25 @@
+data_fetcher:
+    container_name: data_fetcher
+    image: data_fetcher:0.1
+    volumes:
+      - ${PWD}/target_fetcher_conf.yaml:/app/fetcher_conf.yaml
+    restart: always
+    depends_on:
+      - my-mosquitto-broker
+      - http-inventory-api
+    networks:
+      - iot_network
+
+mission_publisher:
+    container_name: mission_publisher
+    image: mission_publisher:0.1
+    working_dir: /app
+    command: python -u missions.py
+    volumes:
+      - ../mission_publisher/app:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - my-mosquitto-broker
+    networks:
+      - iot_network
