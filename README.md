@@ -14,6 +14,7 @@
 - [MQTT Topic Mapping](#mqtt-topic-mapping)
 - [How to use](#how-to-use)
 
+## Overview
 This project simulates and manages a smart warehouse using distributed systems and IoT technologies. It features AGV simulation, slot management and mission scheduling. The architecture is modular, containerized (Docker), and leverages MQTT for communication between services. It also features an HTTP API inventory for the data visualization through Web-ui.
 
 ## Objective
@@ -50,10 +51,10 @@ The parameters are values representing:
   - Number of levels per shelf 
   - Number of AGVs
 
-  ![](iamges\warehouse_config_ui.png)
+  ![](iamges/warehouse_config_ui.png)
 
 These parameters are deisgned to be easily accesible by the user and at the same time to be easily computable data. <br>
-[*generate_warehouse.py*](smart_warehouse\warehouse_generator\generate_warehouse.py) takes the four integers and elaborates them with the logic of the WarehouseMatrix and WarehouseGraph classes respectively from [*matrix.py*](smart_warehouse\warehouse_generator\matrix.py) and [*graph.py*](smart_warehouse\warehouse_generator\graph.py). <br>
+[*generate_warehouse.py*](smart_warehouse/warehouse_generator/generate_warehouse.py) takes the four integers and elaborates them with the logic of the WarehouseMatrix and WarehouseGraph classes respectively from [*matrix.py*](smart_warehouse/warehouse_generator/matrix.py) and [*graph.py*](smart_warehouse/warehouse_generator/graph.py). <br>
 The result is the generation of several structures of data that are going to set the base characterization for the computational part of the system.
 
 Data generated:
@@ -64,12 +65,12 @@ Data generated:
 
 After the configuration values are confirmed, the code gives a visualization of the graph representation of the warehouse in order to let the user check the correct submission of the parameters.
 
-![](iamges\warehouse_graph.png)
+![](iamges/warehouse_graph.png)
 
 This module also takes the responsability of sending both parameters and configuration data to the MQTT broker publishing them on the `warehouse/config` topic level.
 
 **Order Generator**: <br>
-The order generator microservice relies only on [*orders.py*](smart_warehouse\order_generator\app\orders.py) which contains the logic that simulates the arrival of orders to send to the shipping zone.
+The order generator microservice relies only on [*orders.py*](smart_warehouse/order_generator/app/orders.py) which contains the logic that simulates the arrival of orders to send to the shipping zone.
 
 The algorithm creates a configurable number of orders on a 8h time span and distributed with an exponential randomness by assigning to each the arrival timestamp to construct the json:
 ```json
@@ -82,7 +83,7 @@ When the measured timestamp from the start of the service reaches the predicted 
 
 **Pallet Spawner**: <br>
 This module simulates the arrival of pallets from an hypothetical line of production which supplies the warehouse continuously.
-The scenario is designed to receive the signal from weight sensors positioned at the end of the line, for this reason [*pallet_spawner.py*](smart_warehouse\pallet_spawner\app\pallet_spawner.py) uses the WeightSensor class to "spawn" a pallet every 10 seconds by publishing on `warehouse/pallet` with a json structure like this:
+The scenario is designed to receive the signal from weight sensors positioned at the end of the line, for this reason [*pallet_spawner.py*](smart_warehouse/pallet_spawner/app/pallet_spawner.py) uses the WeightSensor class to "spawn" a pallet every 10 seconds by publishing on `warehouse/pallet` with a json structure like this:
 ```json
 {
   "pallet_arrived": true,
@@ -112,7 +113,7 @@ Finally it publishes them all on warehouse/slots/{slot_id}.
 The mission publisher microservice works by receiving configuration data from the broker like node position and typeand then generating missions for AGVs. It uses the warehouse Networkx graph and matrix data to compute optimal paths for each mission using Dijkstra algorithm.
 
 The logic is based on listening to the topics `warehouse/order` and `warehouse/pallet` for new events. 
-When a new order or pallet arrives, the module uses the PalletScheduler class in [*pallet_scheduler.py*](smart_warehouse\mission_publisher\app\pallet_scheduler.py) to find the closest empty or occupied storage slot depending on which topic the signal arrived. After this  it calculates the best route for for the AGV and generates a mission path in form of set of nodes id.
+When a new order or pallet arrives, the module uses the PalletScheduler class in [*pallet_scheduler.py*](smart_warehouse/mission_publisher/app/pallet_scheduler.py) to find the closest empty or occupied storage slot depending on which topic the signal arrived. After this  it calculates the best route for for the AGV and generates a mission path in form of set of nodes id.
 
 The mission is then appended in a larger set that stores all the missions and published as MQTT message on the topic `warehouse/missions`.
 
@@ -120,7 +121,7 @@ The mission is then appended in a larger set that stores all the missions and pu
 
 AGV Simulator emulate the robot movement and interaction inside the warehouse. Rather than simply processing incoming data, it acts as a virtual AGV, interpreting mission instructions and autonomously traversing the warehouse graph.
 
-When a new mission arrives on `warehouse/missions`, the simulator decodes the assigned path, republisehs the set of missions without the chosen one and begins routing through the warehouse nodes. [*encoder_sesnor.py*](smart_warehouse\agv_simulator\app\encoder_sensor.py) and [*ToF_sesnor.py*](smart_warehouse\agv_simulator\app\ToF_sensor.py) serve to simulate the function of the sensors mounted on the AGVs which are respctively: measuring the position of the AGV and signalling the presence of obstruating objects. The AGV's internal state evolves in real time, reflecting both its physical location and operational status.
+When a new mission arrives on `warehouse/missions`, the simulator decodes the assigned path, republisehs the set of missions without the chosen one and begins routing through the warehouse nodes. [*encoder_sesnor.py*](smart_warehouse/agv_simulator/app/encoder_sensor.py) and [*ToF_sesnor.py*](smart_warehouse/agv_simulator/app/ToF_sensor.py) serve to simulate the function of the sensors mounted on the AGVs which are respctively: measuring the position of the AGV and signalling the presence of obstruating objects. The AGV's internal state evolves in real time, reflecting both its physical location and operational status.
 
 Throughout its operation, the simulator emits telemetry updates to `warehouse/agv/{agv_id}/position`. These messages encapsulate the AGV's id, current position, and a timestamp, for example:
 ```json
@@ -140,9 +141,9 @@ For the slot status instead the service reads from the topic all the data of all
 
 **Web UI**: Flask-based interface for visualizing slot usage and AGV telemetry through web UI interfaces reachable with the two URLs:
 - http://127.0.0.1:7071/agv/AGV_1/position (AGV id changable)
-![](iamges\web_ui_3.png)
+![](iamges/web_ui_3.png)
 - http://127.0.0.1:7071/storage_view
-![](iamges\web_ui_2.png)
+![](iamges/web_ui_2.png)
 
 **MQTT Broker**: Central message mosquitto MQTT broker for all IoT communications.
 
@@ -153,7 +154,7 @@ For the slot status instead the service reads from the topic all the data of all
 
 ## Dataflow structure
 
-![](iamges\Smart_warehouse_arch.png)
+![](iamges/Smart_warehouse_arch.png)
 
 ## How It Works
 1. **Warehouse Initialization**: The warehouse is generated with configurable shelves, columns, levels, and AGVs. The structure is published to the MQTT broker to be accesible to the other services.
@@ -164,7 +165,7 @@ For the slot status instead the service reads from the topic all the data of all
 6. **Data Fetcher**: It continuosly transmits the slots status and agv position to the API inventory to make data accessible for the web server.
 7. **Web Visualization**: The web UI displays a live slot status (color-coded), AGV positions, and configuration parameters letting the user intercat with the warehouse in real-time.
 
-![](iamges\web_ui_1.png)
+![](iamges/web_ui_1.png)
 
 ## MQTT Topic Mapping
 
@@ -194,7 +195,7 @@ Below is a mapping of the main MQTT topics used in the Distributed & IoT Warehou
 
 ## How to use
 1. Start all containers with Docker Compose.
-2. Run [*generate_warehouse.py*](smart_warehouse\warehouse_generator\generate_warehouse.py), it will open the configuration ui.
+2. Run [*generate_warehouse.py*](smart_warehouse/warehouse_generator/generate_warehouse.py), it will open the configuration ui.
 3. Insert and submit the 4 parameters by pressing the confirm button.
 4. At this point the graph representation of the warehouse based on the parameters should appear, when you are done checking the correctness of the data you can close the window.
 5. Wait for the confirmed publishing message in the terminal, whenever it appears the system will start generating orders and pallets.
