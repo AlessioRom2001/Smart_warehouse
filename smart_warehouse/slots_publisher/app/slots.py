@@ -90,7 +90,7 @@ def on_message(client, userdata, msg):
             updated = True
         except Exception as e:
             print(f"Error decoding node types: {e}")
-    # Ogni volta che arriva un nuovo parametro o mapping, se tutti i dati sono disponibili, pubblica gli slot
+    # Every time a new parameter or mapping arrives, if all data is available, publish the slots
     if updated and all(warehouse_params.values()) and shelf_nodes is not None and node_positions is not None and node_types is not None:
         print(f"All parameters and node mapping received or updated. Publishing slots...")
         calculate_and_publish_slots(client)
@@ -140,7 +140,7 @@ def calculate_and_publish_slots(client):
             print(f"Published slot {slot_id} to {topic} (accessible_node: {accessible_node})")
             slot_id += 1
     print(f"Published all {len(slots_data)} slots with accessible nodes")
-    # Pubblica il numero totale di slot
+    # Publish the total number of slots
     client.publish(f"{SLOTS_TOPIC_PREFIX}/total", json.dumps({"total_slots": len(slots_data)}), qos=1, retain=False)
 
 def main():

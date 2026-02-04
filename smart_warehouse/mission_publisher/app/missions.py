@@ -58,7 +58,7 @@ def on_message(client, userdata, msg):
         except Exception as e:
             print(f"Error decoding slot: {e}")
         return
-    # Altri topic
+    # Other topics
     payload = json.loads(msg.payload.decode())
     if topic == PALLET_SPAWN_TOPIC:
         warehouse_data["pallet_spawn_nodes"] = payload.get("pallet_spawn_nodes")

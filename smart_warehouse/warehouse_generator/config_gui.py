@@ -33,7 +33,7 @@ class ConfigGUI:
         tk.Spinbox(self.master, from_=1, to=100, textvariable=self.agvs_var, width=10).grid(row=3, column=1, padx=10, pady=5)
         
         # Confirm Button
-        tk.Button(self.master, text="Confirm", command=self._on_confirm, width=15, bg="green").grid(row=4, column=0, columnspan=2, pady=20)
+        tk.Button(self.master, text="Confirm", command=self._on_confirm, width=15, bg="green", fg="white").grid(row=4, column=0, columnspan=2, pady=20)
     
     def _on_confirm(self):
         self.result = {

@@ -47,7 +47,7 @@ class AGV(Device):
 
     def update_measurements(self) -> None:
         """Update all the measurements for the sensors associated to the Machine (energy and accelerometer)
-        Usa node_positions se disponibili per aggiornare la posizione."""
+        Use node_positions if available to update the position."""
         self.ToF_sensor.update_measurement()
         for encoder_sensor in self.encoder_sensor_list:
             if self.node_positions is not None and self.path and self.current_path_index < len(self.path):
@@ -76,7 +76,7 @@ class AGV(Device):
     
     def set_other_agvs(self, agv_list):
         """Set the list of other AGVs in the system for collision detection"""
-        # Filter out this AGV from the list
+        # Remove this AGV from the list
         self.other_agvs = [agv for agv in agv_list if agv.device_id != self.device_id]
 
     def get_json_description(self) -> str:
@@ -86,7 +86,7 @@ class AGV(Device):
 
         encoder_description_list = []
 
-        # For each encoder sensor update the device descriptions and measurements
+        # For each encoder sensor, update the device descriptions and measurements
         for encoder_sensor in self.encoder_sensor_list:
             encoder_description_list.append(encoder_sensor.get_json_description())
 
@@ -106,14 +106,13 @@ class AGV(Device):
         since it includes the measurements of encoder sensors, ToF sensor, actuators and the machine information"""
 
         encoder_description_list = []
-        # For each encoder sensor update the device descriptions and measurements
+        # For each encoder sensor, update the device descriptions and measurements
         for encoder_sensor in self.encoder_sensor_list:
-            # I need to convert the JSON string to a dictionary in order to avoid nested JSON objects
+            # Convert the JSON string to a dictionary to avoid nested JSON objects
             dict_enc = json.loads(encoder_sensor.get_json_measurement())
             encoder_description_list.append(dict_enc)
 
-        # I need to convert the JSON string to a dictionary in order to avoid nested JSON objects
-        # for the switch and ToF sensor
+        # Convert the JSON string to a dictionary to avoid nested JSON objects for the switch and ToF sensor
 
         switch_measurement_dict = json.loads(self.switch.get_json_measurement())
         ToF_sensor_measurement_dict = json.loads(self.ToF_sensor.get_json_measurement())

@@ -1,8 +1,23 @@
 # Distributed & IoT Warehouse Project
 
+## Table of Contents
+- [Objective](#objective)
+- [Devices Involved](#devices-involved)
+- [Architecture](#architecture)
+- [Main Components](#main-components)
+  - [Data Inputs](#data-inputs)
+  - [Data Elaboration](#data-elaboration)
+  - [Communication](#communication)
+  - [Deployement](#deployement)
+- [Dataflow structure](#dataflow-structure)
+- [How It Works](#how-it-works)
+- [MQTT Topic Mapping](#mqtt-topic-mapping)
+- [How to use](#how-to-use)
 
-## Overview
 This project simulates and manages a smart warehouse using distributed systems and IoT technologies. It features AGV simulation, slot management and mission scheduling. The architecture is modular, containerized (Docker), and leverages MQTT for communication between services. It also features an HTTP API inventory for the data visualization through Web-ui.
+
+## Objective
+The aim of this project is to realise an IoT architecture that can be adaptable and scalable for any kind of warehouse. The system can be easily and quickly deployed without having strict dimensions limits. Its microservices structure makes it really accesible for configuring each service in order to simulate the most simlar scenario to the one that we want to deploy it in. 
 
 ## Devices Involved
 
@@ -11,6 +26,18 @@ This project simulates and manages a smart warehouse using distributed systems a
   - **Wheel encoders**: Allow the AGV to compute its own position by measuring wheel rotations, enabling precise movement and localization.
 
 - **Weight sensors**: Positioned in the pallet pick-up area, these sensors detect the presence of a pallet ready to be collected by an AGV. They provide real-time feedback to the system about pallet availability at the end of the production line.
+
+- **Orders requests**: Orders arrival can be either from remote costumers or from an internal database.
+
+- **Installation and control consolle**: Device from where the system is deployed and configured.
+
+- **Computation server**: Hardware responsible for data elaboration and storage.
+
+## Architecture
+- **Microservices**: Each major function runs in its own container (see Dockerfiles and docker-compose.yaml). Every service in the container runs autonumusly and can be easily configurable without having to change the other modules.
+- **MQTT Communication**: All real-time data (slots, AGV telemetry, missions) is exchanged via MQTT topics which is the most suitable protocol for asyncrhonus processes and IoT devices communication like we have in thi application.
+- **REST API**: Inventory and telemetry data are exposed via HTTP endpoints for integration and visualization.
+- **Web UI**: Connects to the REST API and MQTT broker to provide a user-friendly dashboard.
 
 ## Main Components
 
@@ -23,6 +50,8 @@ The parameters are values representing:
   - Number of levels per shelf 
   - Number of AGVs
 
+  ![](iamges\warehouse_config_ui.png)
+
 These parameters are deisgned to be easily accesible by the user and at the same time to be easily computable data. <br>
 [*generate_warehouse.py*](smart_warehouse\warehouse_generator\generate_warehouse.py) takes the four integers and elaborates them with the logic of the WarehouseMatrix and WarehouseGraph classes respectively from [*matrix.py*](smart_warehouse\warehouse_generator\matrix.py) and [*graph.py*](smart_warehouse\warehouse_generator\graph.py). <br>
 The result is the generation of several structures of data that are going to set the base characterization for the computational part of the system.
@@ -34,6 +63,8 @@ Data generated:
 - Networkx graph in json
 
 After the configuration values are confirmed, the code gives a visualization of the graph representation of the warehouse in order to let the user check the correct submission of the parameters.
+
+![](iamges\warehouse_graph.png)
 
 This module also takes the responsability of sending both parameters and configuration data to the MQTT broker publishing them on the `warehouse/config` topic level.
 
@@ -103,37 +134,37 @@ This continuous data stream enables live monitoring and visualization, allowing 
 
 ### Communication
 **Data fetcher**: Module responsable for the transmission of data between the MQTT broker and the API inventory.
-In particular the two data transferred are the agv telemetry and the slots status.
+In particular the two data transferred are the agv telemetry and the slots status which are respctively taken by subscription to `warehouse/agv/{agv_id}/position` and `warehouse/slots/{slot_id}`.
+For the AGV telemetry the code continuously listen to the topic and sends with HTTP updates published separetley in different URLs each AGV.
+For the slot status instead the service reads from the topic all the data of all the storage slots and arranges it to a single JSON message sent by HTTP to the API inventory.
+
 **Web UI**: Flask-based interface for visualizing slot usage and AGV telemetry through web UI interfaces reachable with the two URLs:
 - http://127.0.0.1:7071/agv/AGV_1/position (AGV id changable)
-- http://127.0.0.1:7071/slots/all
+![](iamges\web_ui_3.png)
+- http://127.0.0.1:7071/storage_view
+![](iamges\web_ui_2.png)
 
-**MQTT Broker**: Central message broker for all IoT communications (typically Mosquitto).
+**MQTT Broker**: Central message mosquitto MQTT broker for all IoT communications.
 
 **HTTP API**: RESTful API for inventory, used by the web UI.
 
 ### Deployement
 - **Docker compose**: Folder of necessary files to perform deployement of the conatiners of the microservices.
 
-## Architecture
-- **Microservices**: Each major function runs in its own container (see Dockerfiles and docker-compose.yaml).
-- **MQTT Communication**: All real-time data (slots, AGV telemetry, missions) is exchanged via MQTT topics.
-- **REST API**: Inventory and telemetry data are exposed via HTTP endpoints for integration and visualization.
-- **Web UI**: Connects to the REST API and MQTT broker to provide a user-friendly dashboard.
-
 ## Dataflow structure
 
 ![](iamges\Smart_warehouse_arch.png)
 
 ## How It Works
-1. **Warehouse Initialization**: The warehouse is generated with configurable shelves, columns, levels, and AGVs. The structure is published to MQTT and used by all services.
-2. **AGV Simulation**: AGVs receive missions, navigate the warehouse graph, interact with sensors (e.g., ToF, encoders), and update their status.
-3. **Slot Management**: Slot Publisher tracks and updates the status of each slot (occupied/free) and publishes changes to MQTT.
-4. **Mission Scheduling**: Missions are created and assigned to AGVs, with path planning algorithms ensuring efficient navigation and collision avoidance.
-5. **Web Visualization**: The web UI displays a live map of the warehouse, slot status (color-coded), AGV positions, and configuration parameters. Users can monitor and interact with the system in real time.
-6. **Order & Pallet Events**: Orders and pallets are generated and managed, triggering AGV missions and slot updates.
+1. **Warehouse Initialization**: The warehouse is generated with configurable shelves, columns, levels, and AGVs. The structure is published to the MQTT broker to be accesible to the other services.
+2. **Order & Pallet Events**: Orders and pallets are generated and managed, triggering AGV missions and slot updates.
+3. **Slot Management**: Slot Publisher retreieves the configuration data and creates the storage slots and publish them in order to let the other services alterate their stautus when the simulation needs it.
+4. **Mission Scheduling**: Missions are created as set of nodes and published to the broker, path are created with Dijkistra algorithm that ensure otpimal routes and shorter times of movement.
+5. **AGV Simulation**: AGVs retrieve the mission set and takes the first mission then republishes the set without the chosen mission, navigate the warehouse graph, interact with sensors (ToF, encoders), and update their status.
+6. **Data Fetcher**: It continuosly transmits the slots status and agv position to the API inventory to make data accessible for the web server.
+7. **Web Visualization**: The web UI displays a live slot status (color-coded), AGV positions, and configuration parameters letting the user intercat with the warehouse in real-time.
 
-
+![](iamges\web_ui_1.png)
 
 ## MQTT Topic Mapping
 
@@ -161,10 +192,13 @@ Below is a mapping of the main MQTT topics used in the Distributed & IoT Warehou
 | `warehouse/order`                        | order_generator     | mission_publisher     | New order event                              |  1|  False   |
 | `warehouse/pallet`                     | pallet_spawner      | mission_publisher     | Pallet spawn event                           |  1|  False   |
 
-## Example Workflow
+## How to use
 1. Start all containers with Docker Compose.
-2. The emulated warehouse is generated and published by running generate_warehouse.py.
-3. From the 4 parameters inserted slots_publisher creates the set of storage slots.
-3. Whenever the order_generator or the pallet_spawner publish a signal on the broker mission_publisher uses the graph, matrix and node position to create a path to follow and publishes it.
-5. Agv_simulator waits for a path published on the topic to start simulating the movement of the AGVs.
-4. Slot status and position of the agvs is updated and visualized in the web UI.
+2. Run [*generate_warehouse.py*](smart_warehouse\warehouse_generator\generate_warehouse.py), it will open the configuration ui.
+3. Insert and submit the 4 parameters by pressing the confirm button.
+4. At this point the graph representation of the warehouse based on the parameters should appear, when you are done checking the correctness of the data you can close the window.
+5. Wait for the confirmed publishing message in the terminal, whenever it appears the system will start generating orders and pallets.
+6. In a few seconds you will see from the logs on the docker the trasnsmission of data between services.
+7. while the system is fully running you can check on the two web user interfaces:
+  - on http://127.0.0.1:7071/storage_view to view the storage slot current status,
+  - on http://127.0.0.1:7071/agv/AGV_1/position to check on the position of a specific AGV, its is possible to change the target agv by changing the agv id.
