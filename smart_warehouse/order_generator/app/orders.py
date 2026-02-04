@@ -16,7 +16,7 @@ config_received_event = threading.Event()
 
 def generate_order_times(num_orders, mean_interval_sec=20):
     """
-    Generate order arrival times with exponential distribution (Poisson process).
+    Generate order arrival times with exponential distribution.
     
     Args:
         num_orders: Number of orders to generate
