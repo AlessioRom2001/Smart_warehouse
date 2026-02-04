@@ -43,7 +43,7 @@ The aim of this project is to realise an IoT architecture that can be adaptable 
 ## Main Components
 
 ### Data Inputs
-**Warehouse Generator**: <br>
+__Warehouse Generator__: <br>
 With this module the user can insert the value of 4 parameters to configure the system through a Tkinter user Interface. 
 The parameters are values representing: 
   - Number of shelves
@@ -69,7 +69,7 @@ After the configuration values are confirmed, the code gives a visualization of 
 
 This module also takes the responsability of sending both parameters and configuration data to the MQTT broker publishing them on the `warehouse/config` topic level.
 
-**Order Generator**: <br>
+__Order Generator__: <br>
 The order generator microservice relies only on [*orders.py*](smart_warehouse/order_generator/app/orders.py) which contains the logic that simulates the arrival of orders to send to the shipping zone.
 
 The algorithm creates a configurable number of orders on a 8h time span and distributed with an exponential randomness by assigning to each the arrival timestamp to construct the json:
@@ -81,7 +81,7 @@ The algorithm creates a configurable number of orders on a 8h time span and dist
 ```
 When the measured timestamp from the start of the service reaches the predicted arrival timestamp it publishes the respective order data to `warehouse/order`.
 
-**Pallet Spawner**: <br>
+__Pallet Spawner__: <br>
 This module simulates the arrival of pallets from an hypothetical line of production which supplies the warehouse continuously.
 The scenario is designed to receive the signal from weight sensors positioned at the end of the line, for this reason [*pallet_spawner.py*](smart_warehouse/pallet_spawner/app/pallet_spawner.py) uses the WeightSensor class to "spawn" a pallet every 10 seconds by publishing on `warehouse/pallet` with a json structure like this:
 ```json
@@ -95,7 +95,7 @@ The scenario is designed to receive the signal from weight sensors positioned at
 
 ### Data Elaboration
 
-**Slot Publisher**: <br>
+__Slot Publisher__: <br>
 The main concer of this module is to create the data of the storage slots that compose the warehouse. <br>
 It retrieves the three shelf parameters from the broker to calculate the total number of slots and then it arranges the data for each one of them in a json structure like:
 ```json
@@ -109,7 +109,7 @@ It retrieves the three shelf parameters from the broker to calculate the total n
 ```
 Finally it publishes them all on warehouse/slots/{slot_id}.
 
-**Mission Publisher**: <br>
+__Mission Publisher__: <br>
 The mission publisher microservice works by receiving configuration data from the broker like node position and typeand then generating missions for AGVs. It uses the warehouse Networkx graph and matrix data to compute optimal paths for each mission using Dijkstra algorithm.
 
 The logic is based on listening to the topics `warehouse/order` and `warehouse/pallet` for new events. 
@@ -117,7 +117,7 @@ When a new order or pallet arrives, the module uses the PalletScheduler class in
 
 The mission is then appended in a larger set that stores all the missions and published as MQTT message on the topic `warehouse/missions`.
 
-**AGV Simulator**: <br>
+__AGV Simulator__: <br>
 
 AGV Simulator emulate the robot movement and interaction inside the warehouse. Rather than simply processing incoming data, it acts as a virtual AGV, interpreting mission instructions and autonomously traversing the warehouse graph.
 
@@ -134,23 +134,25 @@ Throughout its operation, the simulator emits telemetry updates to `warehouse/ag
 This continuous data stream enables live monitoring and visualization, allowing other modules to react to AGV progress and warehouse changes as they unfold. Slot status and mission completion are updated automatically as the AGV reaches its goals, providing a realistic simulation of warehouse logistics.
 
 ### Communication
-**Data fetcher**: Module responsable for the transmission of data between the MQTT broker and the API inventory.
+__Data fetcher__: Module responsable for the transmission of data between the MQTT broker and the API inventory.
 In particular the two data transferred are the agv telemetry and the slots status which are respctively taken by subscription to `warehouse/agv/{agv_id}/position` and `warehouse/slots/{slot_id}`.
 For the AGV telemetry the code continuously listen to the topic and sends with HTTP updates published separetley in different URLs each AGV.
 For the slot status instead the service reads from the topic all the data of all the storage slots and arranges it to a single JSON message sent by HTTP to the API inventory.
 
-**Web UI**: Flask-based interface for visualizing slot usage and AGV telemetry through web UI interfaces reachable with the two URLs:
+__Web UI__: Flask-based interface for visualizing slot usage and AGV telemetry through web UI interfaces reachable with the two URLs:
 - http://127.0.0.1:7071/agv/AGV_1/position (AGV id changable)
 ![](iamges/web_ui_3.png)
 - http://127.0.0.1:7071/storage_view
 ![](iamges/web_ui_2.png)
 
-**MQTT Broker**: Central message mosquitto MQTT broker for all IoT communications.
+__MQTT Broker__: Central message mosquitto MQTT broker for all IoT communications.
 
-**HTTP API**: RESTful API for inventory, used by the web UI.
+__HTTP API__: RESTful API for inventory, used by the web UI.
+- _Docker compose_: Folder of necessary files to perform deployement of the conatiners of the microservices.
++ __Docker compose__: Folder of necessary files to perform deployement of the conatiners of the microservices.
 
 ### Deployement
-- **Docker compose**: Folder of necessary files to perform deployement of the conatiners of the microservices.
+- __Docker compose__: Folder of necessary files to perform deployement of the conatiners of the microservices.
 
 ## Dataflow structure
 
