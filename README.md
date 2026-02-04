@@ -205,3 +205,8 @@ Below is a mapping of the main MQTT topics used in the Distributed & IoT Warehou
 7. while the system is fully running you can check on the two web user interfaces:
   - on http://127.0.0.1:7071/storage_view to view the storage slot current status,
   - on http://127.0.0.1:7071/agv/AGV_1/position to check on the position of a specific AGV, its is possible to change the target agv by changing the agv id.
+
+---
+<br>
+
+  Created by: Alessio Romagnoli
